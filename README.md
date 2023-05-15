@@ -1,1 +1,1 @@
-# 使用 curses 库实现 Linux 终端下的小游戏
+# 基于 ncurses 库的 Linux 终端小游戏
