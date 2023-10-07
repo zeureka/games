@@ -1,20 +1,22 @@
 #include "mine.h"
 #include <curses.h>
+#include <vector>
 
 Mine::Mine(const int& row, const int& col) : currLocal(std::make_pair(0, 0)), status(GameStatus::Execut) {
     initGraphValue(row, col);
-    drawBoard();
+    drawBoard(showGraph);
 }
 
 void Mine::startGame() {
     initCurses();
 
     do {
-        this->drawBoard();
-        this->processInput();
+        drawBoard(showGraph);
+        processInput();
 
         if (GameStatus::Over == status || GameStatus::Success == status) {
-            mvprintw(9, COLS * 2 + 5, "%s", "Game Over");
+            drawBoard(realGraph);
+            mvprintw(11, COLS * 2 + 5, "%s", "Game Over");
             char alpha = getch();
             if ('r' == alpha || 'R' == alpha) {
                 initGraphValue(ROWS, COLS);
@@ -94,7 +96,7 @@ void Mine::drawch(const int& row, const int& col, const char& alpha) {
     printw("%c", alpha);
 }
 
-void Mine::drawBoard() {
+void Mine::drawBoard(const std::vector<std::vector<char>>& graph) {
     clear();
     // 创建前景色与背景色键值对
     init_pair(0, COLOR_WHITE, COLOR_BLACK);
@@ -106,18 +108,18 @@ void Mine::drawBoard() {
     for (int row = 0; row < ROWS; ++row) {
         for (int col = 0; col < COLS; ++col) {
             int color = 0;
-            if ('1' == showGraph[row][col] || '2' == showGraph[row][col]) {
+            if ('1' == graph[row][col] || '2' == graph[row][col]) {
                 color = 12;
-            } else if ('3' == showGraph[row][col] || '4' == showGraph[row][col]) {
+            } else if ('3' == graph[row][col] || '4' == graph[row][col]) {
                 color = 34;
-            } else if ('5' == showGraph[row][col] || '6' == showGraph[row][col]) {
+            } else if ('5' == graph[row][col] || '6' == graph[row][col]) {
                 color = 56;
-            } else if ('7' == showGraph[row][col] || '8' == showGraph[row][col]) {
+            } else if ('7' == graph[row][col] || '8' == graph[row][col]) {
                 color = 78;
             }
 
             attron(COLOR_PAIR(color)); // 选用不同的颜色键值对
-            drawch(row, col * 2, showGraph[row][col]);
+            drawch(row, col * 2, graph[row][col]);
             // drawch(row, col * 2 + 30, realGraph[row][col]);
             attroff(COLOR_PAIR(color));
         }
@@ -129,22 +131,24 @@ void Mine::drawBoard() {
     mvprintw(4, COLS * 2 + 5, "%s", "D/L: Right");
     mvprintw(5, COLS * 2 + 5, "%s", "R  : Restart the game");
     mvprintw(6, COLS * 2 + 5, "%s", "Q  : Quit game");
-    mvprintw(8, COLS * 2 + 5,  "Current Location: (%d, %d)", currLocal.first, currLocal.second);
+    mvprintw(7, COLS * 2 + 5, "%s", "M  : Marking mine");
+    mvprintw(8, COLS * 2 + 5, "%s", "U  : Unmark");
+    mvprintw(10, COLS * 2 + 5,  "Current Location: (%d, %d)", currLocal.first, currLocal.second);
     // mvprintw(5, COLS * 2 + 5, "%d", nonBlankNums);
     move(currLocal.first, currLocal.second * 2);
 }
 
 void Mine::recursiveSearch(const int& row, const int& col) {
     // 递归结束条件：
-    // 1.位置是否在有效范围内
-    // 2.当前位置是否是空白格或数字
+    // 1.位置是否在有效范围内；不在有效范围内，则退出递归
+    // 2.当前位置是否是空白格或数字；空白格或数字，则退出递归
     // 3.当前格子外围有地雷
 
     if (row < 0 || row >= ROWS || col < 0 || col >= COLS) {
         return;
     }
 
-    if ('*' != showGraph[row][col]) {
+    if ('*' != showGraph[row][col] && '$' != showGraph[row][col]) {
         return;
     }
 
@@ -200,9 +204,21 @@ input:
             currLocal.first -= 1;
         } else if (('S' == alpha || 'J' == alpha) && currLocal.first < ROWS - 1) {
             currLocal.first += 1;
-        } else if ('C' == alpha) {
+        } else if ('M' == alpha) {
             int row = currLocal.first, col = currLocal.second;
             if ('*' != showGraph[row][col]) {
+                goto input;
+            }
+            showGraph[row][col] = '$';
+        } else if ('U' == alpha) {
+            int row = currLocal.first, col = currLocal.second;
+            if ('$' != showGraph[row][col]) {
+                goto input;
+            }
+            showGraph[row][col] = '*';
+        } else if ('C' == alpha) {
+            int row = currLocal.first, col = currLocal.second;
+            if ('*' != showGraph[row][col] && '$' != showGraph[row][col]) {
                 goto input;
             }
 

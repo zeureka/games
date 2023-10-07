@@ -14,7 +14,6 @@ class Mine {
 public:
     Mine(const int& row = 10, const int& col = 10);
     ~Mine() = default;
-    void testFunction();
     void startGame();
 
 private:
@@ -25,7 +24,7 @@ private:
     void setRC(const int& rc);
     void setRC(const int& row, const int& col);
     void drawch(const int& row, const int& col, const char& alpha);
-    void drawBoard();
+    void drawBoard(const std::vector<std::vector<char>>& graph);
     void recursiveSearch(const int& row, const int& col);
     int getCurPosMineNums(const int& row, const int& col);
     void processInput();
